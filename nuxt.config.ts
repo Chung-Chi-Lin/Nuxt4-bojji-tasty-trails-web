@@ -9,5 +9,11 @@ export default defineNuxtConfig({
     plugins: [
       tailwindcss(),
     ]
+  },
+  nitro: {
+    // 讓 server/audio/ 的音檔被打包進 server bundle（Vercel 相容）
+    serverAssets: [
+      { baseName: 'audio', dir: './server/audio' }
+    ]
   }
 })
