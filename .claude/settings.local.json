@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(Get-Content \"C:\\\\Users\\\\ZHONGQ~1\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-zhongqilin-Desktop------Nuxt4-nuxt-app\\\\680e2b5b-e64d-4452-ad06-211784535b02\\\\tasks\\\\bsmvxfknz.output\" -Tail 30)"
+    ]
+  }
+}

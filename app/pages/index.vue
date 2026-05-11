@@ -1,4 +1,8 @@
 <template>
-  <h1>Hello World!</h1>
-  <NuxtLink to="/about">About</NuxtLink>
+  <div></div>
 </template>
+
+<script lang="ts" setup>
+const token = useCookie('auth_token')
+await navigateTo(token.value ? '/dashboard' : '/login')
+</script>
