@@ -4,6 +4,13 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
+  app: {
+    head: {
+      link: [
+        { rel: 'icon', type: 'image/png', href: '/images/page-link-icon.png' },
+      ],
+    },
+  },
   css: [
     '~/assets/css/main.css',
     'leaflet/dist/leaflet.css',

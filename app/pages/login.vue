@@ -1,24 +1,21 @@
 <template>
-  <!-- Background image + overlay -->
   <div class="min-h-screen relative flex items-center justify-center px-4 py-8">
     <div class="absolute inset-0 bg-[url('/images/login-bg.png')] bg-cover bg-center"></div>
     <div class="absolute inset-0 bg-black/45"></div>
 
-    <!-- Content -->
     <div class="relative z-10 w-full max-w-sm sm:max-w-md">
 
       <!-- Logo -->
       <div class="text-center mb-6 sm:mb-8">
         <div class="text-4xl sm:text-5xl mb-2 sm:mb-3">🗺️</div>
         <h1 class="text-2xl sm:text-3xl font-bold text-white mb-1" style="text-shadow: 0 2px 8px rgba(0,0,0,0.6)">波吉的美食地圖</h1>
-        <p class="font-pacifico text-white/90 text-base sm:text-lg" style="text-shadow: 0 1px 6px rgba(0,0,0,0.7)">Bojji's Tasty Trails</p>
+        <p class="font-caveat text-white/90 text-base sm:text-lg" style="text-shadow: 0 1px 6px rgba(0,0,0,0.7)">Bojji's Tasty Trails</p>
       </div>
 
-      <!-- Card -->
       <div class="bg-food-surface rounded-2xl sm:rounded-3xl shadow-2xl border border-food-border overflow-hidden">
 
-        <!-- Tab toggle -->
-        <div class="flex border-b border-food-border">
+        <!-- Tab toggle（忘記密碼時隱藏） -->
+        <div v-if="mode !== 'forgot'" class="flex border-b border-food-border">
           <button
             @click="mode = 'login'"
             :class="mode === 'login' ? 'bg-food-caramel text-white' : 'text-food-muted hover:text-food-brown'"
@@ -29,6 +26,12 @@
             :class="mode === 'register' ? 'bg-food-caramel text-white' : 'text-food-muted hover:text-food-brown'"
             class="flex-1 py-3.5 sm:py-4 text-sm font-bold transition"
           >註冊</button>
+        </div>
+
+        <!-- 忘記密碼 header -->
+        <div v-else class="flex items-center gap-2 px-4 py-3.5 border-b border-food-border">
+          <button @click="mode = 'login'" class="text-food-muted hover:text-food-brown transition text-sm">←</button>
+          <span class="text-sm font-bold text-food-brown">忘記密碼</span>
         </div>
 
         <div class="p-6 sm:p-8">
@@ -44,16 +47,26 @@
               <label class="block text-xs font-bold text-food-muted mb-1.5 tracking-wider uppercase">密碼</label>
               <input v-model="form.password" type="password" placeholder="••••••••" autocomplete="current-password"
                 class="w-full px-4 py-3 rounded-xl bg-food-input border border-food-border text-food-brown placeholder-food-border focus:outline-none focus:border-food-caramel transition text-base" />
+              <div class="text-right mt-1.5">
+                <button type="button" @click="mode = 'forgot'"
+                  class="text-xs text-food-muted hover:text-food-caramel transition">
+                  忘記密碼？
+                </button>
+              </div>
             </div>
             <p v-if="errorMsg" class="text-food-red text-sm">{{ errorMsg }}</p>
             <button type="submit" :disabled="loading"
-              class="w-full py-3.5 rounded-xl bg-food-caramel hover:bg-food-orange active:scale-95 disabled:opacity-50 text-white font-bold transition text-base">
-              {{ loading ? '登入中…' : '登入 🍜' }}
+              class="w-full py-3.5 rounded-xl bg-food-caramel hover:bg-food-orange active:scale-95 disabled:opacity-50 text-white font-bold transition text-base flex items-center justify-center gap-2">
+              <svg v-if="loading" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 22 6.477 22 12h-4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+              </svg>
+              <span>{{ loading ? '登入中…' : '登入 🍜' }}</span>
             </button>
           </form>
 
           <!-- Register form -->
-          <form v-else @submit.prevent="handleRegister" class="space-y-4">
+          <form v-else-if="mode === 'register'" @submit.prevent="handleRegister" class="space-y-4">
             <div>
               <label class="block text-xs font-bold text-food-muted mb-1.5 tracking-wider uppercase">暱稱</label>
               <input v-model="form.username" type="text" placeholder="你的食客名稱" autocomplete="nickname"
@@ -72,8 +85,32 @@
             <p v-if="errorMsg" class="text-food-red text-sm">{{ errorMsg }}</p>
             <p v-if="successMsg" class="text-green-600 text-sm">{{ successMsg }}</p>
             <button type="submit" :disabled="loading"
-              class="w-full py-3.5 rounded-xl bg-food-caramel hover:bg-food-orange active:scale-95 disabled:opacity-50 text-white font-bold transition text-base">
-              {{ loading ? '註冊中…' : '建立帳號 ✨' }}
+              class="w-full py-3.5 rounded-xl bg-food-caramel hover:bg-food-orange active:scale-95 disabled:opacity-50 text-white font-bold transition text-base flex items-center justify-center gap-2">
+              <svg v-if="loading" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 22 6.477 22 12h-4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+              </svg>
+              <span>{{ loading ? '註冊中…' : '建立帳號 ✨' }}</span>
+            </button>
+          </form>
+
+          <!-- Forgot password form -->
+          <form v-else @submit.prevent="handleForgotPassword" class="space-y-4">
+            <p class="text-xs text-food-muted">輸入你的 Email，我們會寄出重設密碼連結。</p>
+            <div>
+              <label class="block text-xs font-bold text-food-muted mb-1.5 tracking-wider uppercase">Email</label>
+              <input v-model="forgotEmail" type="email" inputmode="email" placeholder="your@email.com" autocomplete="email"
+                class="w-full px-4 py-3 rounded-xl bg-food-input border border-food-border text-food-brown placeholder-food-border focus:outline-none focus:border-food-caramel transition text-base" />
+            </div>
+            <p v-if="errorMsg"   class="text-food-red text-sm">{{ errorMsg }}</p>
+            <p v-if="successMsg" class="text-green-600 text-sm">{{ successMsg }}</p>
+            <button type="submit" :disabled="loading || forgotCooldown > 0"
+              class="w-full py-3.5 rounded-xl bg-food-caramel hover:bg-food-orange active:scale-95 disabled:opacity-50 text-white font-bold transition text-base flex items-center justify-center gap-2">
+              <svg v-if="loading" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 22 6.477 22 12h-4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+              </svg>
+              <span>{{ loading ? '寄送中…' : forgotCooldown > 0 ? `${forgotCooldown}s 後可重新寄送` : '寄出重設連結 📬' }}</span>
             </button>
           </form>
 
@@ -90,16 +127,32 @@ useHead({ title: '波吉的美食地圖' })
 const router = useRouter()
 const token  = useCookie('auth_token')
 
-const mode       = ref<'login' | 'register'>('login')
+const mode       = ref<'login' | 'register' | 'forgot'>('login')
 const loading    = ref(false)
 const errorMsg   = ref('')
 const successMsg = ref('')
 const form       = reactive({ email: '', password: '', username: '' })
+const forgotEmail    = ref('')
+const forgotCooldown = ref(0)
+let cooldownTimer: ReturnType<typeof setInterval> | null = null
 
 watch(mode, () => { errorMsg.value = ''; successMsg.value = '' })
 
+onUnmounted(() => { if (cooldownTimer) clearInterval(cooldownTimer) })
+
+function startCooldown(seconds = 60) {
+  forgotCooldown.value = seconds
+  cooldownTimer = setInterval(() => {
+    forgotCooldown.value--
+    if (forgotCooldown.value <= 0) {
+      clearInterval(cooldownTimer!)
+      cooldownTimer = null
+    }
+  }, 1000)
+}
+
 async function handleLogin() {
-  if (loading.value) return                          // 防止 Enter 連按重複送出
+  if (loading.value) return
   errorMsg.value = ''
 
   if (!form.email.trim())    { errorMsg.value = '請輸入 Email'; return }
@@ -121,7 +174,7 @@ async function handleLogin() {
 }
 
 async function handleRegister() {
-  if (loading.value) return                          // 防止 Enter 連按重複送出
+  if (loading.value) return
   errorMsg.value = ''; successMsg.value = ''
 
   if (!form.email.trim())    { errorMsg.value = '請輸入 Email'; return }
@@ -142,6 +195,27 @@ async function handleRegister() {
     }
   } catch (err: any) {
     errorMsg.value = err.data?.statusMessage ?? '註冊失敗，請稍後再試'
+  } finally {
+    loading.value = false
+  }
+}
+
+async function handleForgotPassword() {
+  if (loading.value || forgotCooldown.value > 0) return
+  errorMsg.value = ''; successMsg.value = ''
+
+  if (!forgotEmail.value.trim()) { errorMsg.value = '請輸入 Email'; return }
+
+  loading.value = true
+  try {
+    await $fetch('/api/auth/forgot-password', {
+      method: 'POST',
+      body: { email: forgotEmail.value.trim() },
+    })
+    successMsg.value = '📬 重設連結已寄出，請到信箱點擊連結！'
+    startCooldown(60)
+  } catch (err: any) {
+    errorMsg.value = err.data?.statusMessage ?? '寄送失敗，請稍後再試'
   } finally {
     loading.value = false
   }

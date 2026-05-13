@@ -7,13 +7,19 @@
         <span class="text-xl sm:text-2xl">🗺️</span>
         <div>
           <h1 class="font-bold text-food-brown text-sm sm:text-base leading-tight">波吉的美食地圖</h1>
-          <p class="hidden sm:block font-pacifico text-food-caramel text-xs leading-tight">Bojji's Tasty Trails</p>
+          <p class="hidden sm:block font-caveat text-food-caramel text-xs leading-tight">Bojji's Tasty Trails</p>
         </div>
       </div>
 
       <div class="flex items-center gap-2 sm:gap-3">
-        <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-food-beige border-2 border-food-border flex items-center justify-center text-base sm:text-lg cursor-pointer hover:border-food-caramel transition"
-             :title="user?.username ?? ''">👤</div>
+        <NuxtLink to="/profile" class="relative shrink-0" :title="user?.username ?? '個人資料'">
+          <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-food-beige border-2 border-food-border overflow-hidden hover:border-food-caramel transition">
+            <img v-if="user?.avatar_url" :src="user.avatar_url" :alt="user?.username" class="w-full h-full object-cover" />
+            <span v-else class="flex items-center justify-center w-full h-full text-base sm:text-lg select-none">👤</span>
+          </div>
+          <UserLevelBadge v-if="user?.user_level" :level="user.user_level" :size="20"
+            class="absolute -bottom-1.5 -right-1.5 drop-shadow" />
+        </NuxtLink>
         <button @click="handleLogout"
           class="text-xs text-food-muted hover:text-food-brown transition px-2.5 sm:px-3 py-1.5 rounded-lg border border-food-border hover:border-food-caramel">
           登出

@@ -8,16 +8,14 @@ export default defineEventHandler(async (event) => {
 
   const admin = getSupabaseAdmin()
 
-  // Token 驗證
   const { data: { user }, error } = await admin.auth.getUser(token)
   if (error || !user) {
     throw createError({ statusCode: 401, statusMessage: 'Token 無效或已過期' })
   }
 
-  // 從 profiles 表撈最新顯示資料
   const { data: profile } = await admin
     .from('profiles')
-    .select('username, avatar_url')
+    .select('username, avatar_url, user_level')
     .eq('id', user.id)
     .single()
 
@@ -27,6 +25,7 @@ export default defineEventHandler(async (event) => {
       email:      user.email,
       username:   profile?.username ?? user.user_metadata?.username ?? user.email?.split('@')[0],
       avatar_url: profile?.avatar_url ?? null,
+      user_level: profile?.user_level ?? 1,
     }
   }
 })
