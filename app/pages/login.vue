@@ -1,106 +1,147 @@
 <template>
-  <div class="min-h-screen flex flex-col items-center justify-center px-4">
+  <!-- Background image + overlay -->
+  <div class="min-h-screen relative flex items-center justify-center px-4 py-8">
+    <div class="absolute inset-0 bg-[url('/images/login-bg.png')] bg-cover bg-center"></div>
+    <div class="absolute inset-0 bg-black/45"></div>
 
-    <!-- Top stripe -->
-    <div class="fixed top-0 left-0 right-0 z-10">
-      <TribalStripe :height="20"/>
-    </div>
-
-    <div class="w-full max-w-md mt-8">
+    <!-- Content -->
+    <div class="relative z-10 w-full max-w-sm sm:max-w-md">
 
       <!-- Logo -->
-      <div class="text-center mb-8">
-        <!-- Decorative diamonds -->
-        <div class="flex justify-center gap-2 mb-4">
-          <span v-for="i in 5" :key="i"
-            class="w-3 h-3 rotate-45 bg-amis-gold"
-            :style="{ opacity: i === 3 ? 1 : 0.35 }"
-          />
-        </div>
-        <h1 class="font-tribal text-4xl font-black text-amis-gold tracking-wider mb-1">Pangcah</h1>
-        <p class="text-amis-muted text-sm tracking-widest">阿美族語言學習平台</p>
+      <div class="text-center mb-6 sm:mb-8">
+        <div class="text-4xl sm:text-5xl mb-2 sm:mb-3">🗺️</div>
+        <h1 class="text-2xl sm:text-3xl font-bold text-white mb-1" style="text-shadow: 0 2px 8px rgba(0,0,0,0.6)">波吉的美食地圖</h1>
+        <p class="font-pacifico text-white/90 text-base sm:text-lg" style="text-shadow: 0 1px 6px rgba(0,0,0,0.7)">Bojji's Tasty Trails</p>
       </div>
 
       <!-- Card -->
-      <div class="bg-amis-surface rounded-2xl border border-amis-border overflow-hidden shadow-2xl">
+      <div class="bg-food-surface rounded-2xl sm:rounded-3xl shadow-2xl border border-food-border overflow-hidden">
 
-        <!-- Card top stripe -->
-        <TribalStripe :height="16"/>
+        <!-- Tab toggle -->
+        <div class="flex border-b border-food-border">
+          <button
+            @click="mode = 'login'"
+            :class="mode === 'login' ? 'bg-food-caramel text-white' : 'text-food-muted hover:text-food-brown'"
+            class="flex-1 py-3.5 sm:py-4 text-sm font-bold transition"
+          >登入</button>
+          <button
+            @click="mode = 'register'"
+            :class="mode === 'register' ? 'bg-food-caramel text-white' : 'text-food-muted hover:text-food-brown'"
+            class="flex-1 py-3.5 sm:py-4 text-sm font-bold transition"
+          >註冊</button>
+        </div>
 
-        <div class="p-8">
-          <h2 class="text-amis-cream font-bold text-lg mb-6 text-center tracking-wide">登入帳號</h2>
+        <div class="p-6 sm:p-8">
 
-          <form @submit.prevent="handleLogin" class="space-y-5">
-            <!-- Username -->
+          <!-- Login form -->
+          <form v-if="mode === 'login'" @submit.prevent="handleLogin" class="space-y-4">
             <div>
-              <label class="block text-xs font-medium text-amis-muted mb-1.5 tracking-wider uppercase">帳號</label>
-              <input
-                v-model="form.username"
-                type="text"
-                placeholder="輸入帳號"
-                autocomplete="username"
-                class="w-full px-4 py-2.5 rounded-lg bg-amis-dark border border-amis-border text-amis-cream placeholder-amis-muted/50 focus:outline-none focus:border-amis-gold transition"
-              />
+              <label class="block text-xs font-bold text-food-muted mb-1.5 tracking-wider uppercase">Email</label>
+              <input v-model="form.email" type="email" inputmode="email" placeholder="your@email.com" autocomplete="email"
+                class="w-full px-4 py-3 rounded-xl bg-food-input border border-food-border text-food-brown placeholder-food-border focus:outline-none focus:border-food-caramel transition text-base" />
             </div>
-
-            <!-- Password -->
             <div>
-              <label class="block text-xs font-medium text-amis-muted mb-1.5 tracking-wider uppercase">密碼</label>
-              <input
-                v-model="form.password"
-                type="password"
-                placeholder="輸入密碼"
-                autocomplete="current-password"
-                class="w-full px-4 py-2.5 rounded-lg bg-amis-dark border border-amis-border text-amis-cream placeholder-amis-muted/50 focus:outline-none focus:border-amis-gold transition"
-              />
+              <label class="block text-xs font-bold text-food-muted mb-1.5 tracking-wider uppercase">密碼</label>
+              <input v-model="form.password" type="password" placeholder="••••••••" autocomplete="current-password"
+                class="w-full px-4 py-3 rounded-xl bg-food-input border border-food-border text-food-brown placeholder-food-border focus:outline-none focus:border-food-caramel transition text-base" />
             </div>
+            <p v-if="errorMsg" class="text-food-red text-sm">{{ errorMsg }}</p>
+            <button type="submit" :disabled="loading"
+              class="w-full py-3.5 rounded-xl bg-food-caramel hover:bg-food-orange active:scale-95 disabled:opacity-50 text-white font-bold transition text-base">
+              {{ loading ? '登入中…' : '登入 🍜' }}
+            </button>
+          </form>
 
-            <!-- Error -->
-            <p v-if="errorMsg" class="text-red-400 text-sm">{{ errorMsg }}</p>
-
-            <!-- Submit -->
-            <button
-              type="submit"
-              :disabled="loading"
-              class="w-full py-3 rounded-lg bg-amis-red hover:bg-amis-red-dark disabled:opacity-50 disabled:cursor-not-allowed text-amis-cream font-bold tracking-widest transition border border-amis-red"
-            >
-              {{ loading ? '登入中…' : '登 入' }}
+          <!-- Register form -->
+          <form v-else @submit.prevent="handleRegister" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-food-muted mb-1.5 tracking-wider uppercase">暱稱</label>
+              <input v-model="form.username" type="text" placeholder="你的食客名稱" autocomplete="nickname"
+                class="w-full px-4 py-3 rounded-xl bg-food-input border border-food-border text-food-brown placeholder-food-border focus:outline-none focus:border-food-caramel transition text-base" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-food-muted mb-1.5 tracking-wider uppercase">Email</label>
+              <input v-model="form.email" type="email" inputmode="email" placeholder="your@email.com" autocomplete="email"
+                class="w-full px-4 py-3 rounded-xl bg-food-input border border-food-border text-food-brown placeholder-food-border focus:outline-none focus:border-food-caramel transition text-base" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-food-muted mb-1.5 tracking-wider uppercase">密碼（至少 6 字元）</label>
+              <input v-model="form.password" type="password" placeholder="••••••••" autocomplete="new-password"
+                class="w-full px-4 py-3 rounded-xl bg-food-input border border-food-border text-food-brown placeholder-food-border focus:outline-none focus:border-food-caramel transition text-base" />
+            </div>
+            <p v-if="errorMsg" class="text-food-red text-sm">{{ errorMsg }}</p>
+            <p v-if="successMsg" class="text-green-600 text-sm">{{ successMsg }}</p>
+            <button type="submit" :disabled="loading"
+              class="w-full py-3.5 rounded-xl bg-food-caramel hover:bg-food-orange active:scale-95 disabled:opacity-50 text-white font-bold transition text-base">
+              {{ loading ? '註冊中…' : '建立帳號 ✨' }}
             </button>
           </form>
 
         </div>
-
-        <!-- Card bottom stripe -->
-        <TribalStripe :height="16"/>
       </div>
-
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
 definePageMeta({ middleware: 'guest' })
+useHead({ title: '波吉的美食地圖' })
 
-useHead({ title: '登入 — Pangcah 學習' })
+const router = useRouter()
+const token  = useCookie('auth_token')
 
-const router   = useRouter()
-const token    = useCookie('auth_token')
-const form     = reactive({ username: '', password: '' })
-const loading  = ref(false)
-const errorMsg = ref('')
+const mode       = ref<'login' | 'register'>('login')
+const loading    = ref(false)
+const errorMsg   = ref('')
+const successMsg = ref('')
+const form       = reactive({ email: '', password: '', username: '' })
+
+watch(mode, () => { errorMsg.value = ''; successMsg.value = '' })
 
 async function handleLogin() {
+  if (loading.value) return                          // 防止 Enter 連按重複送出
   errorMsg.value = ''
-  loading.value  = true
+
+  if (!form.email.trim())    { errorMsg.value = '請輸入 Email'; return }
+  if (!form.password.trim()) { errorMsg.value = '請輸入密碼'; return }
+
+  loading.value = true
   try {
     const data = await $fetch('/api/auth/login', {
       method: 'POST',
-      body: { username: form.username, password: form.password },
+      body: { email: form.email.trim(), password: form.password },
     })
     token.value = data.token
-    await router.push('/welcome')
+    await router.push('/map')
   } catch (err: any) {
     errorMsg.value = err.data?.statusMessage ?? '登入失敗，請稍後再試'
+  } finally {
+    loading.value = false
+  }
+}
+
+async function handleRegister() {
+  if (loading.value) return                          // 防止 Enter 連按重複送出
+  errorMsg.value = ''; successMsg.value = ''
+
+  if (!form.email.trim())    { errorMsg.value = '請輸入 Email'; return }
+  if (!form.password)        { errorMsg.value = '請輸入密碼'; return }
+  if (form.password.length < 6) { errorMsg.value = '密碼至少需要 6 個字元'; return }
+
+  loading.value = true
+  try {
+    const data = await $fetch('/api/auth/register', {
+      method: 'POST',
+      body: { email: form.email.trim(), password: form.password, username: form.username.trim() },
+    })
+    if (data.requiresConfirmation) {
+      successMsg.value = '📬 驗證信已寄出，請到信箱點擊確認連結後再登入！'
+    } else if (data.token) {
+      token.value = data.token
+      await router.push('/map')
+    }
+  } catch (err: any) {
+    errorMsg.value = err.data?.statusMessage ?? '註冊失敗，請稍後再試'
   } finally {
     loading.value = false
   }

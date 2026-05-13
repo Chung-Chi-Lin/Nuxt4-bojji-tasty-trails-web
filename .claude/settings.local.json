@@ -6,7 +6,9 @@
       "PowerShell(Get-Process *)",
       "Read(//mnt/c/Users/zhongqilin/Desktop/技術測試/Nuxt4/**)",
       "Bash(pnpm install *)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(Remove-Item \"C:\\\\Users\\\\zhongqilin\\\\Desktop\\\\技術測試\\\\Nuxt4\\\\nuxt-app\\\\pnpm-lock.yaml.3809551195\" -Force)",
+      "Bash(Remove-Item \"C:\\\\Users\\\\zhongqilin\\\\Desktop\\\\技術測試\\\\Nuxt4\\\\nuxt-app\\\\pnpm-lock.yaml.523177728\" -Force)"
     ]
   }
 }

@@ -21,7 +21,9 @@ logs
 #AI
 .claude
 
+# pnpm conflict temp files
+pnpm-lock.yaml.*
+
 # Local env files
 .env
 .env.*
-!.env.example

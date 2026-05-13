@@ -4,16 +4,20 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
-  css: ["~/assets/css/main.css"],
+  css: [
+    '~/assets/css/main.css',
+    'leaflet/dist/leaflet.css',
+  ],
   vite: {
-    plugins: [
-      tailwindcss(),
-    ]
+    plugins: [tailwindcss()],
   },
-  nitro: {
-    // 讓 server/audio/ 的音檔被打包進 server bundle（Vercel 相容）
-    serverAssets: [
-      { baseName: 'audio', dir: './server/audio' }
-    ]
+  runtimeConfig: {
+    // Server only → NUXT_SUPABASE_SECRET_KEY
+    supabaseSecretKey: '',
+    public: {
+      // Client + Server → NUXT_PUBLIC_SUPABASE_URL / NUXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+      supabaseUrl: '',
+      supabasePublishableKey: '',
+    }
   }
 })

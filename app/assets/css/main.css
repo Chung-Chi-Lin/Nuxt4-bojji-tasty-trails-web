@@ -1,38 +1,41 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Noto+Sans+TC:wght@400;500;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-amis-red:        #8B1A1A;
-  --color-amis-red-dark:   #5E0F0F;
-  --color-amis-gold:       #C8960C;
-  --color-amis-gold-light: #E8B830;
-  --color-amis-dark:       #0E0800;
-  --color-amis-surface:    #1C1105;
-  --color-amis-border:     #3A2910;
-  --color-amis-cream:      #F2ECD6;
-  --color-amis-muted:      #A89060;
+  --color-food-cream:   #FDFAF5;
+  --color-food-beige:   #F5EDD7;
+  --color-food-caramel: #C8860A;
+  --color-food-brown:   #3D2B1F;
+  --color-food-orange:  #E07B39;
+  --color-food-border:  #E8D9C0;
+  --color-food-muted:   #9C7B5C;
+  --color-food-surface: #FFFFFF;
+  --color-food-input:   #FAF7F2;
+  --color-food-red:     #C0392B;
 }
 
 body {
-  background-color: #0E0800;
-  color: #F2ECD6;
-  /* subtle diamond tiling */
-  background-image:
-    linear-gradient(45deg, rgba(200,150,12,.045) 25%, transparent 25%, transparent 75%, rgba(200,150,12,.045) 75%),
-    linear-gradient(45deg, rgba(200,150,12,.045) 25%, transparent 25%, transparent 75%, rgba(200,150,12,.045) 75%);
-  background-size: 36px 36px;
-  background-position: 0 0, 18px 18px;
+  background-color: #FDFAF5;
+  color: #3D2B1F;
+  font-family: 'Noto Sans TC', system-ui, sans-serif;
 }
 
-.font-tribal {
-  font-family: 'Cinzel', Georgia, serif;
-}
+.font-pacifico { font-family: 'Pacifico', cursive; }
 
-/* play-button pulse ring */
-@keyframes ring-pulse {
-  0%   { box-shadow: 0 0 0 0   rgba(200,150,12,.5), 0 0 0 8px  rgba(200,150,12,.15); }
-  60%  { box-shadow: 0 0 0 14px rgba(200,150,12,0),  0 0 0 28px rgba(200,150,12,0);  }
-  100% { box-shadow: 0 0 0 0   rgba(200,150,12,.5), 0 0 0 8px  rgba(200,150,12,.15); }
+/* 所有可點擊元素統一加 pointer */
+button, a, [role="button"],
+label[for], select, summary {
+  cursor: pointer;
 }
+button:disabled { cursor: not-allowed; }
 
-.playing-pulse { animation: ring-pulse 1.6s ease-out infinite; }
+/* Leaflet overrides */
+.leaflet-container { font-family: 'Noto Sans TC', system-ui, sans-serif; }
+.food-marker {
+  background: none !important;
+  border: none !important;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
