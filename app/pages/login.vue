@@ -3,7 +3,7 @@
     <div class="absolute inset-0 bg-[url('/images/login-bg.png')] bg-cover bg-center"></div>
     <div class="absolute inset-0 bg-black/45"></div>
 
-    <div class="relative z-10 w-full max-w-sm sm:max-w-md">
+    <div class="relative z-10 w-full max-w-sm sm:max-w-md mb-50">
 
       <!-- Logo -->
       <div class="text-center mb-6 sm:mb-8">
