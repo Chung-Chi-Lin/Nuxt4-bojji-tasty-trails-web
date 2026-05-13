@@ -12,13 +12,19 @@
       </div>
 
       <div class="flex items-center gap-2 sm:gap-3">
-        <NuxtLink to="/profile" class="relative shrink-0" :title="user?.username ?? '個人資料'">
-          <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-food-beige border-2 border-food-border overflow-hidden hover:border-food-caramel transition">
-            <img v-if="user?.avatar_url" :src="user.avatar_url" :alt="user?.username" class="w-full h-full object-cover" />
-            <span v-else class="flex items-center justify-center w-full h-full text-base sm:text-lg select-none">👤</span>
+        <NuxtLink to="/profile" class="flex items-center gap-2 group">
+          <div class="relative shrink-0">
+            <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-food-beige border-2 border-food-border overflow-hidden group-hover:border-food-caramel transition">
+              <img v-if="user?.avatar_url" :src="user.avatar_url" :alt="user?.username" class="w-full h-full object-cover" />
+              <span v-else class="flex items-center justify-center w-full h-full text-base sm:text-lg select-none">👤</span>
+            </div>
+            <UserLevelBadge v-if="user?.user_level" :level="user.user_level" :size="20"
+              class="absolute -bottom-1.5 -right-1.5 drop-shadow" />
           </div>
-          <UserLevelBadge v-if="user?.user_level" :level="user.user_level" :size="20"
-            class="absolute -bottom-1.5 -right-1.5 drop-shadow" />
+          <span v-if="user?.username"
+            class="hidden sm:block text-xs font-bold text-food-brown group-hover:text-food-caramel transition max-w-[72px] truncate">
+            {{ user.username }}
+          </span>
         </NuxtLink>
         <button @click="handleLogout"
           class="text-xs text-food-muted hover:text-food-brown transition px-2.5 sm:px-3 py-1.5 rounded-lg border border-food-border hover:border-food-caramel">
@@ -33,7 +39,14 @@
       <!-- Map -->
       <div class="flex-1 relative">
         <ClientOnly>
-          <MapView class="absolute inset-0" :spots="spots" :selected-spot="selectedSpot" />
+          <MapView class="absolute inset-0"
+            :spots="spots"
+            :selected-spot="selectedSpot"
+            :token="token ?? ''"
+            :user-id="user?.id ?? ''"
+            @spots-updated="onSpotsUpdated"
+            @center-changed="onCenterChanged"
+          />
         </ClientOnly>
       </div>
 
@@ -43,7 +56,7 @@
         :style="{ width: sidebarOpen ? '320px' : '0px' }"
       >
         <div class="w-80 flex flex-col h-full overflow-y-auto">
-          <SidebarContent :categories="categories" :spots="spots" @select="handleSpotSelect" />
+          <SidebarContent :spots="sidebarSpots" :loading="spotsLoading" @select="handleSpotSelect" />
         </div>
       </aside>
 
@@ -77,7 +90,7 @@
           <div class="flex justify-center pt-3 pb-1">
             <div class="w-10 h-1 rounded-full bg-food-border"></div>
           </div>
-          <SidebarContent :categories="categories" :spots="spots" @select="handleSpotSelect" />
+          <SidebarContent :spots="sidebarSpots" :loading="spotsLoading" @select="handleSpotSelect" />
         </div>
       </div>
     </div>
@@ -105,6 +118,16 @@ export interface Spot {
   emoji: string
   desc: string
   tags: string[]
+}
+
+// Haversine distance in km
+function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a = Math.sin(dLat / 2) ** 2
+    + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
 const router = useRouter()
@@ -142,9 +165,30 @@ const spots: Spot[] = [
   { lat: 25.0268, lng: 121.5431, name: 'Gonna Gonza',  emoji: '🍕', desc: '義大利窯烤 Pizza，必點瑪格麗特', tags: ['西式'] },
 ]
 
-const selectedSpot = ref<Spot | null>(null)
+const selectedSpot = ref<{ lat: number; lng: number } | null>(null)
 
-function handleSpotSelect(spot: Spot) {
+// ── DB spots for sidebar ──────────────────────────────────────
+const dbSpots     = ref<any[]>([])
+const spotsLoading = ref(false)
+const mapCenter    = ref({ lat: 25.0380, lng: 121.5420 })
+
+function onSpotsUpdated({ spots, loading }: { spots: any[]; loading: boolean }) {
+  spotsLoading.value = loading
+  if (!loading) dbSpots.value = spots
+}
+
+function onCenterChanged(lat: number, lng: number) {
+  mapCenter.value = { lat, lng }
+}
+
+const sidebarSpots = computed(() =>
+  [...dbSpots.value]
+    .map(s => ({ ...s, distance: distanceKm(mapCenter.value.lat, mapCenter.value.lng, s.lat, s.lng) }))
+    .sort((a, b) => a.distance - b.distance)
+    .slice(0, 10)
+)
+
+function handleSpotSelect(spot: { lat: number; lng: number }) {
   selectedSpot.value = spot
   if (window.innerWidth < 768) sidebarOpen.value = false
 }

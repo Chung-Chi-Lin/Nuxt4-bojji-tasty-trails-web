@@ -70,11 +70,35 @@
         </p>
 
         <!-- Name + level -->
-        <div class="text-center">
+        <div class="text-center w-full">
           <p class="font-bold text-food-brown text-lg">{{ user?.username ?? '—' }}</p>
           <div v-if="user?.user_level" class="flex items-center justify-center gap-1.5 mt-1">
             <UserLevelBadge :level="user.user_level" :size="18" />
             <span class="text-xs text-food-muted">Lv. {{ user.user_level }}</span>
+          </div>
+
+          <!-- XP progress bar -->
+          <div v-if="user" class="mt-3 w-full px-2">
+            <div class="flex items-center justify-between text-[11px] mb-1.5">
+              <span class="text-food-muted font-bold">Lv.{{ user.user_level }}</span>
+              <span class="font-mono font-bold text-food-caramel">
+                {{ currentLevelXp.toLocaleString() }} / {{ nextLevelXp.toLocaleString() }} XP
+              </span>
+              <span class="text-food-muted font-bold">Lv.{{ user.user_level + 1 }}</span>
+            </div>
+            <div class="h-4 bg-food-beige rounded-full overflow-hidden border border-food-border relative">
+              <div
+                class="h-full rounded-full bg-gradient-to-r from-food-caramel to-food-orange transition-all duration-1000 ease-out"
+                :style="{ width: `${xpProgress}%` }"
+              />
+              <span class="absolute inset-0 flex items-center justify-center text-[10px] font-bold"
+                :class="xpProgress > 40 ? 'text-white' : 'text-food-caramel'">
+                {{ xpProgress }}%
+              </span>
+            </div>
+            <p class="text-[10px] text-food-muted text-center mt-1.5">
+              累積 {{ user.xp.toLocaleString() }} XP
+            </p>
           </div>
         </div>
       </div>
@@ -193,6 +217,37 @@
         </div>
       </div>
 
+      <!-- ── 聯絡作者 ── -->
+      <div class="bg-food-surface rounded-2xl overflow-hidden shadow-sm">
+        <div class="px-5 py-3 border-b border-food-border">
+          <h2 class="text-xs font-bold text-food-muted tracking-wider uppercase">聯絡作者</h2>
+        </div>
+        <div class="px-5 py-5 space-y-3.5">
+          <p class="text-xs text-food-muted leading-relaxed">
+            有新功能建議、發現問題，或看到濫用標記？歡迎直接寄信給作者！
+          </p>
+
+          <div class="flex items-center gap-2 bg-food-beige rounded-xl px-3.5 py-2.5">
+            <span class="text-base shrink-0 select-none">📧</span>
+            <span class="text-sm font-mono text-food-brown flex-1 truncate">{{ AUTHOR_EMAIL }}</span>
+            <button @click="copyAuthorEmail"
+              class="text-xs font-bold shrink-0 transition"
+              :class="emailCopied ? 'text-green-600' : 'text-food-caramel hover:text-food-orange'">
+              {{ emailCopied ? '✅ 已複製' : '複製' }}
+            </button>
+          </div>
+
+          <a :href="feedbackMailto"
+            class="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-food-caramel text-white font-bold text-sm hover:bg-food-orange transition active:scale-95">
+            ✉️ 傳送意見給作者
+          </a>
+
+          <p class="text-[10px] text-food-muted text-center leading-relaxed">
+            請在信中說明問題類型（建議 ／ 問題 ／ 濫用舉報）及詳細描述，作者將盡快回覆。
+          </p>
+        </div>
+      </div>
+
     </div>
   </div>
 </template>
@@ -207,6 +262,15 @@ interface UserProfile {
   username: string
   avatar_url: string | null
   user_level: number
+  xp: number
+}
+
+// XP to reach level N (same formula as server/utils/xp.ts)
+function xpForLevel(level: number): number {
+  if (level <= 1) return 0
+  let total = 0, increment = 100
+  for (let l = 1; l < level; l++) { total += increment; increment += 50 }
+  return total
 }
 
 const token = useCookie('auth_token')
@@ -215,6 +279,19 @@ const { data: meData } = await useFetch('/api/auth/me', {
   headers: { Authorization: `Bearer ${token.value ?? ''}` },
 })
 const user = ref<UserProfile | null>(meData.value?.user as UserProfile ?? null)
+
+// XP progress within current level
+const currentLevelXp = computed(() => {
+  if (!user.value) return 0
+  return user.value.xp - xpForLevel(user.value.user_level)
+})
+const nextLevelXp = computed(() => {
+  if (!user.value) return 100
+  return xpForLevel(user.value.user_level + 1) - xpForLevel(user.value.user_level)
+})
+const xpProgress = computed(() =>
+  Math.min(100, Math.round((currentLevelXp.value / nextLevelXp.value) * 100))
+)
 
 // ── 頭像 ──────────────────────────────────────────────────────
 const fileInput      = ref<HTMLInputElement | null>(null)
@@ -325,6 +402,36 @@ async function saveUsername() {
   } finally {
     usernameLoading.value = false
   }
+}
+
+// ── 聯絡作者 ─────────────────────────────────────────────────
+const AUTHOR_EMAIL = 'z0925955648@gmail.com'
+const emailCopied  = ref(false)
+
+const feedbackMailto = computed(() => {
+  const subject = encodeURIComponent('波吉的美食地圖 - 意見反饋')
+  const body = encodeURIComponent(
+    [
+      '您好，',
+      '',
+      '【問題類型】（請填：新增建議 / 問題回報 / 濫用舉報 / 其他）：',
+      '',
+      '【詳細描述】：',
+      '',
+      `【我的電子郵件】：${user.value?.email ?? ''}`,
+      '',
+      '謝謝！',
+    ].join('\n')
+  )
+  return `mailto:${AUTHOR_EMAIL}?subject=${subject}&body=${body}`
+})
+
+async function copyAuthorEmail() {
+  try {
+    await navigator.clipboard.writeText(AUTHOR_EMAIL)
+    emailCopied.value = true
+    setTimeout(() => { emailCopied.value = false }, 2000)
+  } catch {}
 }
 
 // ── 密碼 ──────────────────────────────────────────────────────

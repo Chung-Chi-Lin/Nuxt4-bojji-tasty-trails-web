@@ -1,71 +1,128 @@
 <template>
-  <div class="p-4 space-y-4">
+  <div class="flex flex-col h-full">
 
-    <!-- Search -->
-    <div class="flex items-center gap-2 bg-food-input border border-food-border rounded-xl px-3 py-2.5">
-      <span class="text-food-muted shrink-0">🔍</span>
-      <input v-model="search" type="text" placeholder="搜尋美食地點…"
-        class="flex-1 bg-transparent text-sm text-food-brown placeholder-food-border focus:outline-none min-w-0" />
+    <!-- Header + search -->
+    <div class="px-4 pt-4 pb-3 shrink-0">
+      <div class="flex items-center justify-between mb-2.5">
+        <p class="text-xs font-bold text-food-muted tracking-wider uppercase">📍 精選地點</p>
+        <span v-if="!loading && spots.length" class="text-[10px] text-food-muted tabular-nums">
+          最近 {{ spots.length }} 個
+        </span>
+      </div>
+      <div class="flex items-center gap-2 bg-food-input border border-food-border rounded-xl px-3 py-2.5">
+        <span class="text-food-muted shrink-0 text-sm">🔍</span>
+        <input v-model="search" type="text" placeholder="搜尋名稱、標籤、備註…"
+          class="flex-1 bg-transparent text-sm text-food-brown placeholder-food-border focus:outline-none min-w-0" />
+        <button v-if="search" @click="search = ''"
+          class="text-food-muted hover:text-food-brown text-xs transition shrink-0 leading-none">✕</button>
+      </div>
     </div>
 
-    <!-- Category tags -->
-    <div class="flex flex-wrap gap-2">
-      <button v-for="cat in categories" :key="cat.label"
-        @click="cat.active = !cat.active"
-        :class="cat.active ? 'bg-food-caramel text-white' : 'bg-food-beige text-food-muted'"
-        class="px-3 py-1.5 rounded-full text-xs font-bold transition active:scale-95">
-        {{ cat.emoji }} {{ cat.label }}
-      </button>
-    </div>
+    <!-- List / states -->
+    <div class="flex-1 overflow-y-auto px-4 pb-4 space-y-2 min-h-0">
 
-    <!-- Spot list -->
-    <div>
-      <p class="text-xs font-bold text-food-muted tracking-wider uppercase mb-3">📍 精選地點</p>
-      <div v-if="filteredSpots.length" class="space-y-3">
-        <div v-for="spot in filteredSpots" :key="spot.name"
+      <!-- Loading skeleton -->
+      <template v-if="loading">
+        <div v-for="i in 5" :key="i" class="bg-food-beige rounded-xl p-3 animate-pulse">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-food-border shrink-0" />
+            <div class="flex-1 space-y-2">
+              <div class="h-3 bg-food-border rounded w-2/3" />
+              <div class="h-2.5 bg-food-border rounded w-1/2" />
+            </div>
+            <div class="h-2.5 bg-food-border rounded w-10 shrink-0" />
+          </div>
+        </div>
+      </template>
+
+      <!-- Spots -->
+      <template v-else-if="filteredSpots.length">
+        <div v-for="(spot, idx) in filteredSpots" :key="spot.id"
           @click="emit('select', spot)"
-          class="bg-food-beige rounded-xl p-3 cursor-pointer hover:border-food-caramel border border-transparent transition active:scale-[0.98]">
-          <div class="flex items-start gap-2">
-            <span class="text-2xl shrink-0">{{ spot.emoji }}</span>
+          class="bg-food-beige rounded-xl p-3 cursor-pointer border border-transparent hover:border-food-caramel transition active:scale-[0.98] group">
+          <div class="flex items-start gap-2.5">
+            <!-- Emoji + rank badge -->
+            <div class="relative shrink-0 mt-0.5">
+              <span class="text-2xl leading-none select-none">{{ spot.emoji }}</span>
+              <span class="absolute -top-1.5 -left-2 w-[18px] h-[18px] bg-food-caramel text-white rounded-full text-[9px] font-black flex items-center justify-center leading-none shadow">
+                {{ idx + 1 }}
+              </span>
+            </div>
+            <!-- Info -->
             <div class="flex-1 min-w-0">
-              <p class="font-bold text-food-brown text-sm truncate">{{ spot.name }}</p>
-              <p class="text-food-muted text-xs mt-0.5 line-clamp-2">{{ spot.desc }}</p>
-              <div class="flex flex-wrap gap-1 mt-1.5">
-                <span v-for="t in spot.tags" :key="t"
-                  class="px-2 py-0.5 bg-food-surface rounded-full text-[10px] text-food-muted border border-food-border">
+              <div class="flex items-baseline gap-1.5">
+                <p class="font-bold text-food-brown text-sm truncate flex-1 group-hover:text-food-caramel transition">{{ spot.name }}</p>
+                <span class="text-[10px] text-food-muted shrink-0 font-mono tabular-nums">{{ formatDist(spot.distance) }}</span>
+              </div>
+              <p v-if="spot.notes" class="text-food-muted text-xs mt-0.5 line-clamp-1 leading-relaxed">{{ spot.notes }}</p>
+              <div v-if="spot.tags?.length" class="flex flex-wrap gap-1 mt-1.5">
+                <span v-for="t in spot.tags.slice(0, 3)" :key="t"
+                  class="px-1.5 py-0.5 bg-food-surface rounded-full text-[10px] text-food-muted border border-food-border">
                   {{ t }}
+                </span>
+                <span v-if="spot.tags.length > 3" class="text-[10px] text-food-muted self-center">
+                  +{{ spot.tags.length - 3 }}
                 </span>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      <p v-else class="text-sm text-food-muted text-center py-4">找不到符合的地點</p>
-    </div>
+      </template>
 
+      <!-- No spots in viewport -->
+      <div v-else-if="!loading && !spots.length" class="py-10 text-center px-3">
+        <div class="text-5xl mb-4 select-none">🏆</div>
+        <p class="font-bold text-food-brown text-sm mb-1.5">您搜尋的地點</p>
+        <p class="font-bold text-food-brown text-sm mb-3">還沒有其他美食家的標記</p>
+        <p class="text-xs text-food-muted leading-relaxed">
+          來當頭香吧！<br>點擊右下角 <span class="font-bold text-food-caramel">＋</span> 新增第一個標記
+        </p>
+      </div>
+
+      <!-- Search no match -->
+      <div v-else-if="!loading && spots.length && !filteredSpots.length" class="py-8 text-center px-3">
+        <div class="text-3xl mb-3 select-none">🔍</div>
+        <p class="text-sm text-food-muted">找不到「{{ search }}」相關地點</p>
+      </div>
+
+    </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import type { Spot } from '~/pages/map.vue'
+export interface SidebarSpot {
+  id: string
+  name: string
+  emoji: string
+  lat: number
+  lng: number
+  tags: string[]
+  notes: string
+  is_public: boolean
+  distance: number
+}
 
 const props = defineProps<{
-  categories: { label: string; emoji: string; active: boolean }[]
-  spots: Spot[]
+  spots: SidebarSpot[]
+  loading: boolean
 }>()
 
-const emit = defineEmits<{ select: [spot: Spot] }>()
+const emit = defineEmits<{ select: [spot: SidebarSpot] }>()
 
 const search = ref('')
 
-const activeLabels = computed(() => props.categories.filter(c => c.active).map(c => c.label))
+const filteredSpots = computed(() => {
+  if (!search.value.trim()) return props.spots
+  const q = search.value.toLowerCase()
+  return props.spots.filter(s =>
+    s.name.toLowerCase().includes(q) ||
+    (s.notes ?? '').toLowerCase().includes(q) ||
+    (s.tags ?? []).some(t => t.toLowerCase().includes(q))
+  )
+})
 
-const filteredSpots = computed(() => props.spots.filter(spot => {
-  const matchSearch = !search.value ||
-    spot.name.includes(search.value) ||
-    spot.desc.includes(search.value)
-  const matchCategory = activeLabels.value.length === 0 ||
-    spot.tags.some(t => activeLabels.value.includes(t))
-  return matchSearch && matchCategory
-}))
+function formatDist(km: number): string {
+  if (km < 1) return `${Math.round(km * 1000)} m`
+  return `${km.toFixed(1)} km`
+}
 </script>

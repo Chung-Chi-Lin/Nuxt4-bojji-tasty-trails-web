@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
 
   const { data: profile } = await admin
     .from('profiles')
-    .select('username, avatar_url, user_level')
+    .select('username, avatar_url, user_level, xp')
     .eq('id', user.id)
     .single()
 
@@ -26,6 +26,7 @@ export default defineEventHandler(async (event) => {
       username:   profile?.username ?? user.user_metadata?.username ?? user.email?.split('@')[0],
       avatar_url: profile?.avatar_url ?? null,
       user_level: profile?.user_level ?? 1,
+      xp:         profile?.xp ?? 0,
     }
   }
 })
