@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen relative flex items-center justify-center px-4 py-8">
-    <div class="absolute inset-0 bg-[url('/images/login-bg.png')] bg-cover bg-center"></div>
+    <div class="absolute inset-0 bg-[url('/images/login-bg-small.png')] sm:bg-[url('/images/login-bg.png')] bg-cover bg-center"></div>
     <div class="absolute inset-0 bg-black/45"></div>
 
     <div class="relative z-10 w-full max-w-sm sm:max-w-md mb-50">
@@ -17,27 +17,27 @@
         <!-- Tab toggle（忘記密碼時隱藏） -->
         <div v-if="mode !== 'forgot'" class="flex border-b border-food-border">
           <button
-            @click="mode = 'login'"
             :class="mode === 'login' ? 'bg-food-caramel text-white' : 'text-food-muted hover:text-food-brown'"
             class="flex-1 py-3.5 sm:py-4 text-sm font-bold transition"
+            @click="mode = 'login'"
           >登入</button>
           <button
-            @click="mode = 'register'"
             :class="mode === 'register' ? 'bg-food-caramel text-white' : 'text-food-muted hover:text-food-brown'"
             class="flex-1 py-3.5 sm:py-4 text-sm font-bold transition"
+            @click="mode = 'register'"
           >註冊</button>
         </div>
 
         <!-- 忘記密碼 header -->
         <div v-else class="flex items-center gap-2 px-4 py-3.5 border-b border-food-border">
-          <button @click="mode = 'login'" class="text-food-muted hover:text-food-brown transition text-sm">←</button>
+          <button class="text-food-muted hover:text-food-brown transition text-sm" @click="mode = 'login'">←</button>
           <span class="text-sm font-bold text-food-brown">忘記密碼</span>
         </div>
 
         <div class="p-6 sm:p-8">
 
           <!-- Login form -->
-          <form v-if="mode === 'login'" @submit.prevent="handleLogin" class="space-y-4">
+          <form v-if="mode === 'login'" class="space-y-4" @submit.prevent="handleLogin">
             <div>
               <label class="block text-xs font-bold text-food-muted mb-1.5 tracking-wider uppercase">Email</label>
               <input v-model="form.email" type="email" inputmode="email" placeholder="your@email.com" autocomplete="email"
@@ -45,11 +45,13 @@
             </div>
             <div>
               <label class="block text-xs font-bold text-food-muted mb-1.5 tracking-wider uppercase">密碼</label>
-              <input v-model="form.password" type="password" placeholder="••••••••" autocomplete="current-password"
-                class="w-full px-4 py-3 rounded-xl bg-food-input border border-food-border text-food-brown placeholder-food-border focus:outline-none focus:border-food-caramel transition text-base" />
-              <div class="text-right mt-1.5">
-                <button type="button" @click="mode = 'forgot'"
-                  class="text-xs text-food-muted hover:text-food-caramel transition">
+              <AppPasswordInput v-model="form.password" placeholder="••••••••" autocomplete="current-password" />
+              <div class="flex items-center justify-between my-3">
+                <label class="flex items-center gap-1.5 text-xs text-food-muted cursor-pointer select-none">
+                  <input v-model="rememberEmail" type="checkbox" class="rounded" />
+                  記住帳號
+                </label>
+                <button type="button" class="text-xs text-food-muted hover:text-food-caramel transition" @click="mode = 'forgot'">
                   忘記密碼？
                 </button>
               </div>
@@ -66,7 +68,7 @@
           </form>
 
           <!-- Register form -->
-          <form v-else-if="mode === 'register'" @submit.prevent="handleRegister" class="space-y-4">
+          <form v-else-if="mode === 'register'" class="space-y-4" @submit.prevent="handleRegister">
             <div>
               <label class="block text-xs font-bold text-food-muted mb-1.5 tracking-wider uppercase">暱稱</label>
               <input v-model="form.username" type="text" placeholder="你的食客名稱" autocomplete="nickname"
@@ -79,8 +81,7 @@
             </div>
             <div>
               <label class="block text-xs font-bold text-food-muted mb-1.5 tracking-wider uppercase">密碼（至少 6 字元）</label>
-              <input v-model="form.password" type="password" placeholder="••••••••" autocomplete="new-password"
-                class="w-full px-4 py-3 rounded-xl bg-food-input border border-food-border text-food-brown placeholder-food-border focus:outline-none focus:border-food-caramel transition text-base" />
+              <AppPasswordInput v-model="form.password" placeholder="••••••••" autocomplete="new-password" />
             </div>
             <p v-if="errorMsg" class="text-food-red text-sm">{{ errorMsg }}</p>
             <p v-if="successMsg" class="text-green-600 text-sm">{{ successMsg }}</p>
@@ -95,7 +96,7 @@
           </form>
 
           <!-- Forgot password form -->
-          <form v-else @submit.prevent="handleForgotPassword" class="space-y-4">
+          <form v-else class="space-y-4" @submit.prevent="handleForgotPassword">
             <p class="text-xs text-food-muted">輸入你的 Email，我們會寄出重設密碼連結。</p>
             <div>
               <label class="block text-xs font-bold text-food-muted mb-1.5 tracking-wider uppercase">Email</label>
@@ -121,26 +122,39 @@
 </template>
 
 <script lang="ts" setup>
+import type { LoginResponse, RegisterResponse } from '~/types'
+
 definePageMeta({ middleware: 'guest' })
 useHead({ title: '波吉的美食地圖' })
+
+type Mode = 'login' | 'register' | 'forgot'
 
 const router = useRouter()
 const token  = useCookie('auth_token')
 
-const mode       = ref<'login' | 'register' | 'forgot'>('login')
-const loading    = ref(false)
-const errorMsg   = ref('')
-const successMsg = ref('')
-const form       = reactive({ email: '', password: '', username: '' })
+const mode           = ref<Mode>('login')
+const loading        = ref(false)
+const errorMsg       = ref('')
+const successMsg     = ref('')
+const form           = reactive({ email: '', password: '', username: '' })
 const forgotEmail    = ref('')
 const forgotCooldown = ref(0)
+const rememberEmail  = ref(false)
 let cooldownTimer: ReturnType<typeof setInterval> | null = null
+
+onMounted(() => {
+  const saved = localStorage.getItem('remember_email')
+  if (saved) {
+    form.email = saved
+    rememberEmail.value = true
+  }
+})
 
 watch(mode, () => { errorMsg.value = ''; successMsg.value = '' })
 
 onUnmounted(() => { if (cooldownTimer) clearInterval(cooldownTimer) })
 
-function startCooldown(seconds = 60) {
+function startCooldown(seconds = 60): void {
   forgotCooldown.value = seconds
   cooldownTimer = setInterval(() => {
     forgotCooldown.value--
@@ -151,7 +165,7 @@ function startCooldown(seconds = 60) {
   }, 1000)
 }
 
-async function handleLogin() {
+async function handleLogin(): Promise<void> {
   if (loading.value) return
   errorMsg.value = ''
 
@@ -160,30 +174,35 @@ async function handleLogin() {
 
   loading.value = true
   try {
-    const data = await $fetch('/api/auth/login', {
+    const data = await $fetch<LoginResponse>('/api/auth/login', {
       method: 'POST',
       body: { email: form.email.trim(), password: form.password },
     })
     token.value = data.token
+    if (rememberEmail.value) {
+      localStorage.setItem('remember_email', form.email.trim())
+    } else {
+      localStorage.removeItem('remember_email')
+    }
     await router.push('/map')
-  } catch (err: any) {
-    errorMsg.value = err.data?.statusMessage ?? '登入失敗，請稍後再試'
-  } finally {
+  } catch (err: unknown) {
+    const e = err as { data?: { statusMessage?: string } }
+    errorMsg.value = e.data?.statusMessage ?? '登入失敗，請稍後再試'
     loading.value = false
   }
 }
 
-async function handleRegister() {
+async function handleRegister(): Promise<void> {
   if (loading.value) return
   errorMsg.value = ''; successMsg.value = ''
 
-  if (!form.email.trim())    { errorMsg.value = '請輸入 Email'; return }
-  if (!form.password)        { errorMsg.value = '請輸入密碼'; return }
-  if (form.password.length < 6) { errorMsg.value = '密碼至少需要 6 個字元'; return }
+  if (!form.email.trim())        { errorMsg.value = '請輸入 Email'; return }
+  if (!form.password)            { errorMsg.value = '請輸入密碼'; return }
+  if (form.password.length < 6)  { errorMsg.value = '密碼至少需要 6 個字元'; return }
 
   loading.value = true
   try {
-    const data = await $fetch('/api/auth/register', {
+    const data = await $fetch<RegisterResponse>('/api/auth/register', {
       method: 'POST',
       body: { email: form.email.trim(), password: form.password, username: form.username.trim() },
     })
@@ -193,14 +212,15 @@ async function handleRegister() {
       token.value = data.token
       await router.push('/map')
     }
-  } catch (err: any) {
-    errorMsg.value = err.data?.statusMessage ?? '註冊失敗，請稍後再試'
+  } catch (err: unknown) {
+    const e = err as { data?: { statusMessage?: string } }
+    errorMsg.value = e.data?.statusMessage ?? '註冊失敗，請稍後再試'
   } finally {
     loading.value = false
   }
 }
 
-async function handleForgotPassword() {
+async function handleForgotPassword(): Promise<void> {
   if (loading.value || forgotCooldown.value > 0) return
   errorMsg.value = ''; successMsg.value = ''
 
@@ -214,8 +234,9 @@ async function handleForgotPassword() {
     })
     successMsg.value = '📬 重設連結已寄出，請到信箱點擊連結！'
     startCooldown(60)
-  } catch (err: any) {
-    errorMsg.value = err.data?.statusMessage ?? '寄送失敗，請稍後再試'
+  } catch (err: unknown) {
+    const e = err as { data?: { statusMessage?: string } }
+    errorMsg.value = e.data?.statusMessage ?? '寄送失敗，請稍後再試'
   } finally {
     loading.value = false
   }

@@ -113,7 +113,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { Spot } from '~/pages/map.vue'
+import type { Spot, DbSpot, GeoLocation } from '~/types'
 
 interface NominatimResult {
   place_id: number
@@ -122,26 +122,12 @@ interface NominatimResult {
   lon: string
 }
 
-interface DbSpot {
-  id: string
-  user_id: string
-  name: string
-  emoji: string
-  lat: number
-  lng: number
-  tags: string[]
-  notes: string
-  is_public: boolean
-  photo_urls: string[]
-  xp_earned: number
-  created_at: string
-}
-
 const props = defineProps<{
   spots: Spot[]
-  selectedSpot: { lat: number; lng: number } | null
+  selectedSpot: GeoLocation | null
   token: string
   userId: string
+  flyTo?: GeoLocation | null
 }>()
 
 const emit = defineEmits<{
@@ -156,6 +142,7 @@ let leafletMap: any = null
 let demoSpotLayer: any = null
 let dbSpotLayer: any = null
 let tempMarker: any = null
+let userMarker: any = null
 
 // ── 搜尋 ──────────────────────────────────────────────────────
 const searchQuery   = ref('')
@@ -245,6 +232,17 @@ onUnmounted(() => {
 // ── selectedSpot（側欄連動）────────────────────────────────
 watch(() => props.selectedSpot, (spot) => {
   if (spot && leafletMap) leafletMap.setView([spot.lat, spot.lng], 16)
+})
+
+// ── 飛到使用者定位並顯示藍點 ──────────────────────────────
+watch(() => props.flyTo, (loc) => {
+  if (!loc || !leafletMap || !L) return
+  leafletMap.flyTo([loc.lat, loc.lng], 15, { duration: 1.2 })
+  if (userMarker) userMarker.remove()
+  userMarker = L.circleMarker([loc.lat, loc.lng], {
+    radius: 8, fillColor: '#3B82F6', color: '#ffffff', weight: 2.5, fillOpacity: 1,
+  }).bindPopup('<div style="font-family:\'Noto Sans TC\',sans-serif;font-size:13px;font-weight:700;color:#1D4ED8">📍 您在這裡</div>')
+    .addTo(leafletMap)
 })
 
 // ── Demo markers ────────────────────────────────────────────
